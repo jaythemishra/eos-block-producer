@@ -1,0 +1,21 @@
+{
+
+    "listenIP": "",
+    "configListenPort": "9000",
+    "listenPort": "8080",
+
+    "nodeosProtocol": "http",
+    "nodeosUrl": "localhost",
+    "nodeosPort": "8888",
+
+    "contractBlackList": {
+        "currency": true
+    },
+    "maxSignatures": 10,
+    "maxTransactionSize": 1000000,
+
+    "logEndpoints": [],
+    "filterEndpoints": ["http://localhost:8081"],
+
+    "logFileLocation": "./fail2ban.log"
+}

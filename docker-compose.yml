@@ -1,0 +1,152 @@
+version: "3"
+
+#Make sure that the proper IP addresses of the other block producers have been specified in ./.env
+
+services:
+    #Proxy servers - have not yet figured out how to get them to work withot network_mode: "host"
+    proxy-1-1:
+        build:
+            context: ./patroneos
+            dockerfile: docker/proxy/Dockerfile.proxy-1-1
+        ports:
+            - "8080:8080"
+        privileged: true
+        network_mode: "host"
+    filter-1-1:
+        build:
+            context: ./patroneos
+            dockerfile: docker/filter/Dockerfile.filter-1-1
+        ports:
+            - "8081:8081" #Send http requests to this port
+        network_mode: "host"
+        container_name: full-node-1-filter-1
+
+    proxy-1-2:
+        build:
+            context: ./patroneos
+            dockerfile: docker/proxy/Dockerfile.proxy-1-2
+        ports:
+            - "8076:8076"
+        privileged: true
+        network_mode: "host"
+        container_name: full-node-1-proxy-2
+    filter-1-2:
+        build:
+            context: ./patroneos
+            dockerfile: docker/filter/Dockerfile.filter-1-2
+        ports:
+            - "8077:8077" #Send http requests to this port
+        network_mode: "host"
+        container_name: full-node-1-filter-2
+
+    proxy-2-1:
+        build:
+            context: ./patroneos
+            dockerfile: docker/proxy/Dockerfile.proxy-2-1
+        ports:
+            - "8078:8078"
+        privileged: true
+        network_mode: "host"
+        container_name: full-node-2-proxy-1
+    filter-2-1:
+        build:
+            context: ./patroneos
+            dockerfile: docker/filter/Dockerfile.filter-2-1
+        ports:
+            - "8079:8079" #Send http requests to this port
+        network_mode: "host"
+        container_name: full-node-2-filter-1
+
+    proxy-2-2:
+        build:
+            context: ./patroneos
+            dockerfile: docker/proxy/Dockerfile.proxy-2-2
+        ports:
+            - "8074:8074"
+        privileged: true
+        network_mode: "host"
+        container_name: full-node-2-proxy-2
+    filter-2-2:
+        build:
+            context: ./patroneos
+            dockerfile: docker/filter/Dockerfile.filter-2-2
+        ports:
+            - "8075:8075" #Send http requests to this port
+        network_mode: "host"
+        container_name: full-node-2-filter-2
+
+
+    #EOS Nodes    
+    BP_Producer_Node:
+        image: eosio/eos:latest
+        ports:
+            - "8890:8888"
+            - "9878:9876"
+        container_name: bp_producer_node
+        depends_on:
+            - BP_Full_Node_1
+            - BP_Full_Node_2
+        networks:
+            eos_net:
+                ipv4_address: 1.1.1.5
+        command: ["/bin/bash", "-c", "nodeos -e -p eosio --plugin eosio::producer_plugin --plugin eosio::producer_api_plugin --plugin eosio::bnet_plugin --plugin eosio::chain_api_plugin --plugin eosio::chain_plugin --plugin eosio::net_api_plugin --plugin eosio::net_plugin --plugin eosio::http_plugin -d /mnt/dev/data --config-dir /mnt/dev/config --http-server-address=0.0.0.0:8888 --http-alias=127.0.0.1:8888 --http-alias=localhost:8888 --bnet-endpoint=0.0.0.0:4321 --bnet-connect=1.1.1.2:4321 --p2p-listen-endpoint=0.0.0.0:9876 --p2p-peer-address=1.1.1.3:9876 --p2p-peer-address=1.1.1.4:9876 --access-control-allow-origin=* --http-validate-host=false"]
+   
+    BP_Failover_Node:
+        image: eosio/eos:latest
+        ports:
+            - "8891:8888"
+            - "9879:9876"
+        env_file: ./.env
+        networks:
+            eos_net:
+                ipv4_address: 1.1.1.2
+        container_name: bp_failover_node
+        depends_on:
+            - BP_Full_Node_1
+            - BP_Full_Node_2
+        command: ["/bin/bash", "-c", "nodeos -e -x -p eosio --plugin eosio::producer_plugin --plugin eosio::producer_api_plugin --plugin eosio::bnet_plugin --plugin eosio::chain_api_plugin --plugin eosio::chain_plugin --plugin eosio::net_api_plugin --plugin eosio::net_plugin --plugin eosio::http_plugin -d /mnt/dev/data --config-dir /mnt/dev/config --http-server-address=0.0.0.0:8888 --http-alias=127.0.0.1:8888 --http-alias=localhost:8888 --bnet-endpoint=0.0.0.0:4321 --p2p-listen-endpoint=0.0.0.0:9876 --p2p-peer-address=1.1.1.3:9876 --p2p-peer-address=1.1.1.4:9876 --access-control-allow-origin=* --http-validate-host=false --p2p-peer-address=${BP_FULL_NODE_1} --p2p-peer-address=${BP_FULL_NODE_2} --p2p-peer-address=${BP_FULL_NODE_3} --p2p-peer-address=${BP_FULL_NODE_4} --p2p-peer-address=${BP_FULL_NODE_5} --p2p-peer-address=${BP_FULL_NODE_6} --p2p-peer-address=${BP_FULL_NODE_7} --p2p-peer-address=${BP_FULL_NODE_8} --p2p-peer-address=${BP_FULL_NODE_9} --p2p-peer-address=${BP_FULL_NODE_10} --p2p-peer-address=${BP_FULL_NODE_11} --p2p-peer-address=${BP_FULL_NODE_12} --p2p-peer-address=${BP_FULL_NODE_13} --p2p-peer-address=${BP_FULL_NODE_14} --p2p-peer-address=${BP_FULL_NODE_15} --p2p-peer-address=${BP_FULL_NODE_16} --p2p-peer-address=${BP_FULL_NODE_17} --p2p-peer-address=${BP_FULL_NODE_18} --p2p-peer-address=${BP_FULL_NODE_19} --p2p-peer-address=${BP_FULL_NODE_20} --bnet-connect=${BP_PRODUCER_NODE_1} --bnet-connect=${BP_PRODUCER_NODE_2} --bnet-connect=${BP_PRODUCER_NODE_3} --bnet-connect=${BP_PRODUCER_NODE_4} --bnet-connect=${BP_PRODUCER_NODE_5} --bnet-connect=${BP_PRODUCER_NODE_6} --bnet-connect=${BP_PRODUCER_NODE_7} --bnet-connect=${BP_PRODUCER_NODE_8} --bnet-connect=${BP_PRODUCER_NODE_9} --bnet-connect=${BP_PRODUCER_NODE_10} --bnet-connect=${BP_PRODUCER_NODE_11} --bnet-connect=${BP_PRODUCER_NODE_12} --bnet-connect=${BP_PRODUCER_NODE_13} --bnet-connect=${BP_PRODUCER_NODE_14} --bnet-connect=${BP_PRODUCER_NODE_15} --bnet-connect=${BP_PRODUCER_NODE_16} --bnet-connect=${BP_PRODUCER_NODE_17} --bnet-connect=${BP_PRODUCER_NODE_18} --bnet-connect=${BP_PRODUCER_NODE_19} --bnet-connect=${BP_PRODUCER_NODE_20}"]
+    
+    BP_Full_Node_1:
+        image: eosio/eos:latest
+        ports:
+            - "8888:8888"
+            - "9876:9876"
+        container_name: bp_full_node_1
+        networks:
+            eos_net:
+                ipv4_address: 1.1.1.3
+        command: ["/bin/bash", "-c", "nodeos --plugin eosio::history_plugin --plugin eosio::chain_api_plugin --plugin eosio::chain_plugin --plugin eosio::history_api_plugin --plugin eosio::http_plugin -d /mnt/dev/data --config-dir /mnt/dev/config --http-server-address=0.0.0.0:8888 --http-alias=127.0.0.1:8888 --http-alias=localhost:8888 --p2p-listen-endpoint=0.0.0.0:9876 --p2p-peer-address=1.1.1.4:9876 --access-control-allow-origin=* --http-validate-host=false"]
+
+    BP_Full_Node_2:
+        image: eosio/eos:latest
+        ports:
+            - "8889:8888"
+            - "9877:9876"
+        container_name: bp_full_node_2
+        env_file: ./.env
+        networks:
+            eos_net:
+                ipv4_address: 1.1.1.4
+        command: ["/bin/bash", "-c", "nodeos --plugin eosio::history_plugin --plugin eosio::chain_api_plugin --plugin eosio::chain_plugin --plugin eosio::history_api_plugin --plugin eosio::http_plugin -d /mnt/dev/data --config-dir /mnt/dev/config --http-server-address=0.0.0.0:8888 --http-alias=127.0.0.1:8888 --http-alias=localhost:8888 --p2p-listen-endpoint=0.0.0.0:9876 --access-control-allow-origin=* --http-validate-host=false --p2p-peer-address=${BP_FULL_NODE_1} --p2p-peer-address=${BP_FULL_NODE_2} --p2p-peer-address=${BP_FULL_NODE_3} --p2p-peer-address=${BP_FULL_NODE_4} --p2p-peer-address=${BP_FULL_NODE_5} --p2p-peer-address=${BP_FULL_NODE_6} --p2p-peer-address=${BP_FULL_NODE_7} --p2p-peer-address=${BP_FULL_NODE_8} --p2p-peer-address=${BP_FULL_NODE_9} --p2p-peer-address=${BP_FULL_NODE_10} --p2p-peer-address=${BP_FULL_NODE_11} --p2p-peer-address=${BP_FULL_NODE_12} --p2p-peer-address=${BP_FULL_NODE_13} --p2p-peer-address=${BP_FULL_NODE_14} --p2p-peer-address=${BP_FULL_NODE_15} --p2p-peer-address=${BP_FULL_NODE_16} --p2p-peer-address=${BP_FULL_NODE_17} --p2p-peer-address=${BP_FULL_NODE_18} --p2p-peer-address=${BP_FULL_NODE_19} --p2p-peer-address=${BP_FULL_NODE_20}"]
+
+    #Currently only switches over block production from Producer Node to Failover Node when both nodes have production paused, can be made more sophisticated by updating ./producer-control-switch.sh
+    producer_control_switch:
+        build:
+            context: .
+            dockerfile: Dockerfile.producer-control-switch
+        depends_on:
+            - BP_Producer_Node
+            - BP_Failover_Node
+        container_name: producer_control_switch
+        networks:
+            eos_net:
+                ipv4_address: 1.1.1.6
+
+networks:
+  eos_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      -
+        subnet: 1.1.1.0/24
