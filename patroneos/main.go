@@ -17,8 +17,10 @@ type Config struct {
 	ConfigListenPort   string            `json:"configListenPort"`
 	ListenPort         string            `json:"listenPort"`
 	NodeosProtocol     string            `json:"nodeosProtocol"`
-	NodeosURL          string            `json:"nodeosUrl"`
-	NodeosPort         string            `json:"nodeosPort"`
+	NodeosURL1         string            `json:"nodeosUrl1"`
+	NodeosPort1        string            `json:"nodeosPort1"`
+	NodeosURL2         string            `json:"nodeosUrl2"`
+	NodeosPort2        string            `json:"nodeosPort2"`
 	ContractBlackList  map[string]bool   `json:"contractBlackList"`
 	MaxSignatures      int               `json:"maxSignatures"`
 	MaxTransactionSize int               `json:"maxTransactionSize"`

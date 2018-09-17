@@ -306,12 +306,12 @@ func copyHeaders(response http.Header, request http.Header) {
 // If the request passes all middleware validations
 // we forward it to the node to be processed.
 func forwardCallToNodeos(w http.ResponseWriter, r *http.Request) {
-	nodeosHost := fmt.Sprintf("%s://%s:%s", appConfig.NodeosProtocol, appConfig.NodeosURL, appConfig.NodeosPort)
-	url := nodeosHost + r.URL.String()
+	nodeosHost1 := fmt.Sprintf("%s://%s:%s", appConfig.NodeosProtocol, appConfig.NodeosURL1, appConfig.NodeosPort1)
+	url1 := nodeosHost1 + r.URL.String()
 	method := r.Method
 	body, _ := ioutil.ReadAll(r.Body)
 
-	request, err := http.NewRequest(method, url, bytes.NewBuffer(body))
+	request1, err := http.NewRequest(method, url1, bytes.NewBuffer(body))
 
 	if err != nil {
 		log.Printf("Error in creating request %s", err)
@@ -320,38 +320,80 @@ func forwardCallToNodeos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Forward headers to nodeos
-	request.Header = make(http.Header)
-	copyHeaders(request.Header, r.Header)
+	request1.Header = make(http.Header)
+	copyHeaders(request1.Header, r.Header)
 
-	res, err := client.Do(request)
+	res1, err := client.Do(request1)
 
 	if err != nil {
-		log.Printf("Error in executing request %s", err)
-		logFailure("NODEOS_UNREACHABLE", w, r, 503)
-		return
-	}
+		nodeosHost2 := fmt.Sprintf("%s://%s:%s", appConfig.NodeosProtocol, appConfig.NodeosURL2, appConfig.NodeosPort2)
+		url2 := nodeosHost2 + r.URL.String()
+		request2, err := http.NewRequest(method, url2, bytes.NewBuffer(body))
 
-	defer res.Body.Close()
+		if err != nil {
+			log.Printf("Error in creating request %s", err)
+			logFailure("NODEOS_REQUEST_NOT_CREATED", w, r, 500)
+			return
+		}
 
-	body, _ = ioutil.ReadAll(res.Body)
+		request2.Header = make(http.Header)
+		copyHeaders(request2.Header, r.Header)
 
-	if res.StatusCode == 200 {
-		logSuccess("SUCCESS", r)
+		res2, err := client.Do(request2)
+
+		if err != nil {
+			log.Printf("Error in executing request %s", err)
+			logFailure("NODEOS_UNREACHABLE", w, r, 503)
+			return
+		}
+
+		defer res2.Body.Close()
+
+		body, _ = ioutil.ReadAll(res2.Body)
+
+		if res2.StatusCode == 200 {
+			logSuccess("SUCCESS", r)
+		} else {
+			logFailure("TRANSACTION_FAILED", nil, r, 0)
+		}
+
+		copyHeaders(w.Header(), res2.Header)
+
+		// Inject configured headers
+		injectHeaders(w.Header())
+
+		w.WriteHeader(res2.StatusCode)
+
+		_, err = w.Write(body)
+		if err != nil {
+			log.Printf("Error writing response body %s", err)
+			return
+		}
+
 	} else {
-		logFailure("TRANSACTION_FAILED", nil, r, 0)
-	}
 
-	copyHeaders(w.Header(), res.Header)
+		defer res1.Body.Close()
 
-	// Inject configured headers
-	injectHeaders(w.Header())
+		body, _ = ioutil.ReadAll(res1.Body)
 
-	w.WriteHeader(res.StatusCode)
+		if res1.StatusCode == 200 {
+			logSuccess("SUCCESS", r)
+		} else {
+			logFailure("TRANSACTION_FAILED", nil, r, 0)
+		}
 
-	_, err = w.Write(body)
-	if err != nil {
-		log.Printf("Error writing response body %s", err)
-		return
+		copyHeaders(w.Header(), res1.Header)
+
+		// Inject configured headers
+		injectHeaders(w.Header())
+
+		w.WriteHeader(res1.StatusCode)
+
+		_, err = w.Write(body)
+		if err != nil {
+			log.Printf("Error writing response body %s", err)
+			return
+		}
 	}
 }
 

@@ -1,8 +1,6 @@
 # EOS Block Producer
 
-This is one possible proof of concept configuration of a block producer that could contribute to the EOS blockchain. It uses Docker Compose to spin up multiple Docker containers, some of which run EOSIO nodes, and others of which run proxies to serve as an extra layer of protection from basic Denial of Service attacks. By modifying the addresses in the [.env](.env) file, you could theoretically connect to other block producers in the Mainnet or even spin up twenty copies of this configuration on different hosts to create your own block producing network. Check out EOSIO's [Developer Portal](https://developers.eos.io/) if you want to learn more about the EOSIO platform and how it works.
-
-The proxies were implemented by cloning and modifying EOSIO's [Patroneos](https://github.com/EOSIO/patroneos) repository. Unfortunately, they currently only work on a Linux host because of the way Docker works on OS X and Windows. All the containers will still run, but you will not get proper results by trying to connect to the proxies' ports. See the [Advanced Patroneos Tutorial](/patroneos/TUTORIAL-ADVANCED.md) for a more in-depth explanation.
+This is one possible proof of concept configuration of a block producer that could contribute to the EOS blockchain. It uses Docker Compose to spin up multiple Docker containers, some of which run EOSIO nodes, and others of which run proxies to serve as an extra layer of protection from basic Denial of Service attacks. By modifying the addresses in the [.env](.env) file, you could theoretically connect to other block producers in the Mainnet or even spin up twenty copies of this configuration on different hosts to create your own block producing network. Check out EOSIO's [Developer Portal](https://developers.eos.io/) if you want to learn more about the EOSIO platform and how it works. The proxies were implemented by cloning and modifying EOSIO's [Patroneos](https://github.com/EOSIO/patroneos) repository and the load balancer was implemented using nginx.
 
 ## Requirements
 
@@ -21,7 +19,7 @@ docker-compose up
 
 ## Block Producer Configuration Diagram
 
-![Block Producer Configuration Diagram](block-producer.png "EOS Block Producer Configuration Diagram")
+![Block Producer Configuration Diagram](block-producer-diagram.png "EOS Block Producer Configuration Diagram")
 
 As you can see in the above diagram, the four EOS nodes communicate via p2p, while the proxies and producer control switch communicate with the EOS nodes via HTTP. I did not use [WireGuard](https://www.wireguard.com/) as shown in the diagram because the network connecting the EOS nodes was contained to Docker Compose anyway.
 
@@ -45,4 +43,4 @@ curl http://127.0.0.1:8890/v1/producer/pause
 
 ## Improvements
 
-Currently, the proxy containers all use network_mode: host. This is not ideal, but I have not been able to figure out how to make them work without this yet. Also, the script behind the Producer Control Switch is currently very simple and only switches over production if both nodes have production paused. Implementing WireGuard would also probably be a good idea if these containers were to be deployed on separate hosts.
+Currently, the script behind the Producer Control Switch is rather simple and could be made more robust. Implementing WireGuard would also probably be a good idea if these containers were to be deployed on separate hosts.

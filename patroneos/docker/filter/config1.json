@@ -1,0 +1,24 @@
+{
+    "listenIP": "",
+    "listenPort": "8081",
+    "configListenPort": "9001",
+
+    "nodeosProtocol": "http",
+    "nodeosUrl1": "1.1.1.3",
+    "nodeosPort1": "8888",
+    "nodeosUrl2": "1.1.1.4",
+    "nodeosPort2": "8888",
+
+    "contractBlackList": {
+        "bad": true
+    },
+
+    "maxSignatures": 10,
+    "maxTransactionSize": 500000,
+    "maxTransactions": 1,
+
+    
+    "headers": {
+        "Server": ""
+    }
+}
